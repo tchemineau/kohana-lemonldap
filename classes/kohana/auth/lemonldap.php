@@ -44,6 +44,10 @@ class Kohana_Auth_Lemonldap extends Auth
 		{
 			$config['security']['token_header'] = false;
 		}
+		if (!isset($config['security']['token_value']))
+		{
+			$config['security']['token_value'] = false;
+		}
 
 		$this->_config = $config;
 	}
@@ -105,8 +109,28 @@ class Kohana_Auth_Lemonldap extends Auth
 	 */
 	protected function _login ( $username = null, $password = null, $remember = true )
 	{
-		$user = $this->_get_lemonldap_user();
+		// Check remote IP address
+		if ($config['security']['server_ip'] !== false)
+		{
+			if (isset($_SERVER['REMOTE_ADDR']) && $_SERVER['REMOTE_ADDR'] != $config['security']['server_ip'])
+			{
+				return FALSE;
+			}
+		}
 
+		// Check remote token
+		if ($config['security']['token_header'] !== false && $config['security']['token_value'] !== false)
+		{
+			$header = $config['security']['token_header'];
+			$value = $config['security']['token_value'];
+
+			if (isset($_SERVER[$header]) && $_SERVER[$header] != $value)
+			{
+				return FALSE;
+			}
+		}
+
+		$user = $this->_get_lemonldap_user();
 		if ($user)
 		{
 			return $this->complete_login($user->data());
