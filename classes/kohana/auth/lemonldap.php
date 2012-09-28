@@ -18,7 +18,7 @@ class Kohana_Auth_Lemonldap extends Auth
 	 *
 	 * @var array
 	 */
-	private $_config = null;
+	private $_lmconfig = null;
 
         /**
          * Loads Lemonldap configuration.
@@ -30,26 +30,30 @@ class Kohana_Auth_Lemonldap extends Auth
         {
 		parent::__construct($config);
 
-		$config = Kohana::$config->load('lemonldap');
+		$lmconfig = Kohana::$config->load('lemonldap');
 
-		if (!isset($config['security']))
+		if (!isset($lmconfig['security']))
 		{
-			$config['security'] = array();
+			$lmconfig['security'] = array();
 		}
-		if (!isset($config['security']['server_ip']))
+		if (!isset($lmconfig['security']['server_ip']))
 		{
-			$config['security']['server_ip'] = '127.0.0.1';
+			$lmconfig['security']['server_ip'] = '127.0.0.1';
 		}
-		if (!isset($config['security']['token_header']))
+		if (!isset($lmconfig['security']['token_header']))
 		{
-			$config['security']['token_header'] = false;
+			$lmconfig['security']['token_header'] = false;
 		}
-		if (!isset($config['security']['token_value']))
+		if (!isset($lmconfig['security']['token_value']))
 		{
-			$config['security']['token_value'] = false;
+			$lmconfig['security']['token_value'] = false;
+		}
+		if (!isset($lmconfig['debug']))
+		{
+			$lmconfig['debug'] = false;
 		}
 
-		$this->_config = $config;
+		$this->_config = $lmconfig;
 	}
 
 	/**
@@ -109,9 +113,17 @@ class Kohana_Auth_Lemonldap extends Auth
 	 */
 	protected function _login ( $username = null, $password = null, $remember = true )
 	{
+		// Is debug
+		$config = $this->_lmconfig;
+		$debug = $config['debug'];
+
 		// Check remote IP address
 		if ($config['security']['server_ip'] !== false)
 		{
+			if ($debug)
+			{
+				file_put_contents('/tmp/lemonldap.log', 'REMOTE_ADDR='.$_SERVER['REMOTE_ADDR']."\n");
+			}
 			if (isset($_SERVER['REMOTE_ADDR']) && $_SERVER['REMOTE_ADDR'] != $config['security']['server_ip'])
 			{
 				return FALSE;
@@ -124,14 +136,27 @@ class Kohana_Auth_Lemonldap extends Auth
 			$header = $config['security']['token_header'];
 			$value = $config['security']['token_value'];
 
+			if ($debug)
+			{
+				file_put_contents('/tmp/lemonldap.log', 'TOKEN_NAME='.$header.', TOKEN_VALUE='.$value."\n");
+			}
 			if (isset($_SERVER[$header]) && $_SERVER[$header] != $value)
 			{
 				return FALSE;
 			}
 		}
 
+		// Retrieve user
 		$user = $this->_get_lemonldap_user();
-		if ($user)
+
+		// Trace user information
+		if ($debug)
+		{
+			file_put_contents('/tmp/lemonldap.log', 'USER='.var_export($user,true)."\n");
+		}
+
+		// Authenticate
+		if ($user !== false)
 		{
 			return $this->complete_login($user->data());
 		}

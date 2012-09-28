@@ -38,5 +38,8 @@ return array
 
 	),
 
+	// Activate debug
+	'debug' => false,
+
 );
 
