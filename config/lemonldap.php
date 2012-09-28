@@ -15,11 +15,11 @@ return array
 		// Name of the HTTP header that specify the security token to verify the
 		// identity of the request
 		// Set FALSE to disable this check
-		'token_header_name' => 'HTTP_AUTH_TOKEN',
+		'token_header' => 'HTTP_AUTH_TOKEN',
 
 		// Token value
 		// Only verify if token_header_name is specified
-		'token_header_value' => '123456',
+		'token_value' => '123456',
 
 	),
 
