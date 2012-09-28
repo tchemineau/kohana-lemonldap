@@ -14,6 +14,41 @@ class Kohana_Auth_Lemonldap extends Auth
 {
 
 	/**
+	 * Lemonldap configuration.
+	 *
+	 * @var array
+	 */
+	private $_config = null;
+
+        /**
+         * Loads Lemonldap configuration.
+         *
+         * @param   array   $config   Lemonldap auth configuration
+         * @return  void
+         */
+        public function __construct ( $config = array() )
+        {
+		parent::__construct($config);
+
+		$config = Kohana::$config->load('lemonldap');
+
+		if (!isset($config['security']))
+		{
+			$config['security'] = array();
+		}
+		if (!isset($config['security']['server_ip']))
+		{
+			$config['security']['server_ip'] = '127.0.0.1';
+		}
+		if (!isset($config['security']['token_header']))
+		{
+			$config['security']['token_header'] = false;
+		}
+
+		$this->_config = $config;
+	}
+
+	/**
 	 * Most of the time, it is not possible to retrieve a password
 	 * from a user into a LDAP directory.
 	 *
