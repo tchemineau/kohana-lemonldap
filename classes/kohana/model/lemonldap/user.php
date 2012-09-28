@@ -23,7 +23,7 @@ class Kohana_Model_Lemonldap_User extends Model
 	 *
 	 * @var array
 	 */
-	protected $_map = array();
+	public static $map = array();
 
 	/**
 	 * Loads Lemonldap configuration and create the user from HTTP headers.
@@ -32,8 +32,6 @@ class Kohana_Model_Lemonldap_User extends Model
 	 */
 	public function __construct ()
 	{
-		parent::__construct();
-
                 $config = Kohana::$config->load('lemonldap');
 
                 if (!isset($config['mapping']))
@@ -47,7 +45,7 @@ class Kohana_Model_Lemonldap_User extends Model
                         );
                 }
 
-		$this->_map = $config['mapping']['user'];
+		self::$map = $config['mapping']['user'];
 	}
 
 	/**
@@ -76,13 +74,12 @@ class Kohana_Model_Lemonldap_User extends Model
 	{
 		$user = new self();
 		$data = array();
-		$headers = getallheaders();
 
-		foreach ($this->_map as $key => $header)
+		foreach (self::$map as $key => $header)
 		{
-			if (isset($headers[$header]))
+			if (isset($_SERVER[$header]))
 			{
-				$data[$key] = $headers[$header];
+				$data[$key] = $_SERVER[$header];
 			}
 		}
 

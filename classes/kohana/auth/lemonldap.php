@@ -53,7 +53,7 @@ class Kohana_Auth_Lemonldap extends Auth
 			$lmconfig['debug'] = false;
 		}
 
-		$this->_config = $lmconfig;
+		$this->_lmconfig = $lmconfig;
 	}
 
 	/**
@@ -122,7 +122,7 @@ class Kohana_Auth_Lemonldap extends Auth
 		{
 			if ($debug)
 			{
-				file_put_contents('/tmp/lemonldap.log', 'REMOTE_ADDR='.$_SERVER['REMOTE_ADDR']."\n");
+				file_put_contents('/tmp/lemonldap.log', 'REMOTE_ADDR='.$_SERVER['REMOTE_ADDR']."\n", FILE_APPEND);
 			}
 			if (isset($_SERVER['REMOTE_ADDR']) && $_SERVER['REMOTE_ADDR'] != $config['security']['server_ip'])
 			{
@@ -138,7 +138,7 @@ class Kohana_Auth_Lemonldap extends Auth
 
 			if ($debug)
 			{
-				file_put_contents('/tmp/lemonldap.log', 'TOKEN_NAME='.$header.', TOKEN_VALUE='.$value."\n");
+				file_put_contents('/tmp/lemonldap.log', 'TOKEN_NAME='.$header.', TOKEN_VALUE='.$value."\n", FILE_APPEND);
 			}
 			if (isset($_SERVER[$header]) && $_SERVER[$header] != $value)
 			{
@@ -152,7 +152,7 @@ class Kohana_Auth_Lemonldap extends Auth
 		// Trace user information
 		if ($debug)
 		{
-			file_put_contents('/tmp/lemonldap.log', 'USER='.var_export($user,true)."\n");
+			file_put_contents('/tmp/lemonldap.log', 'USER='.var_export($user,true)."\n", FILE_APPEND);
 		}
 
 		// Authenticate
