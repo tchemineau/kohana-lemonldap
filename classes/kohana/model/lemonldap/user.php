@@ -83,6 +83,11 @@ class Kohana_Model_Lemonldap_User extends Model
 			}
 		}
 
+		if (sizeof($data) == 0)
+		{
+			return FALSE;
+		}
+
 		return $user->data($data);
 	}
 
