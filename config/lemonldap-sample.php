@@ -3,6 +3,24 @@
 return array
 (
 
+	// Activate debug
+	'debug' => false,
+
+	// Here, define mapping between internal variables and HTTP headers. Add your own
+	// internal variables which will be stored in session and could be retrieve by
+	// calling $auth->get_user()
+	'mapping' => array (
+
+		// Default values for user mapping
+		'user' => array (
+
+			'username' => 'HTTP_AUTH_USER',
+			'mail' => 'HTTP_AUTH_MAIL',
+
+		),
+
+	),
+
 	// Security parameters
 	'security' => array (
 
@@ -23,23 +41,23 @@ return array
 
 	),
 
-	// Here, define mapping between internal variables and HTTP headers. Add your own
-	// internal variables which will be stored in session and could be retrieve by
-	// calling $auth->get_user()
-	'mapping' => array (
+	// SOAP parameters
+	'service' => array (
 
-		// Default values for user mapping
-		'user' => array (
+		// URL to the WSDL file of Lemonldap::NG server
+		'wsdl' => 'http://auth.example.com/portal.wsdl',
 
-			'username' => 'HTTP_AUTH_USER',
-			'mail' => 'HTTP_AUTH_MAIL',
+		// Name of the HTTP header that specify the user SSO session id.
+		// This header have to be configured into the Lemonldap::NG manager.
+		'sessionid_header' => 'HTTP_AUTH_SESSION_ID',
 
-		),
+		// Cookie domain
+		'cookie_domain' => '.example.com',
+
+		// Cookie name
+		'cookie_name' => 'lemonldap',
 
 	),
-
-	// Activate debug
-	'debug' => false,
 
 );
 
