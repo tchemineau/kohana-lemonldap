@@ -20,14 +20,14 @@ class Kohana_Auth_Lemonldap extends Auth
 	 */
 	private $_lmconfig = null;
 
-        /**
-         * Loads Lemonldap configuration.
-         *
-         * @param   array   $config   Lemonldap auth configuration
-         * @return  void
-         */
-        public function __construct ( $config = array() )
-        {
+	/**
+	 * Loads Lemonldap configuration.
+	 *
+	 * @param   array   $config   Lemonldap auth configuration
+	 * @return  void
+	 */
+	public function __construct ( $config = array() )
+	{
 		parent::__construct($config);
 
 		$lmconfig = Kohana::$config->load('lemonldap');
@@ -48,6 +48,26 @@ class Kohana_Auth_Lemonldap extends Auth
 		{
 			$lmconfig['security']['token_value'] = false;
 		}
+		if (!isset($lmconfig['service']))
+		{
+			$lmconfig['service'] = array();
+		}
+		if (!isset($lmconfig['service']['wsdl']))
+		{
+			$lmconfig['service']['wsdl'] = false;
+		}
+		if (!isset($lmconfig['service']['sessionid_header']))
+		{
+			$lmconfig['service']['sessionid_header'] = false;
+		}
+		if (!isset($lmconfig['service']['cookie_domain']))
+		{
+			$lmconfig['service']['cookie_domain'] = false;
+		}
+		if (!isset($lmconfig['service']['cookie_name']))
+		{
+			$lmconfig['service']['cookie_name'] = 'lemonldap';
+		}
 		if (!isset($lmconfig['debug']))
 		{
 			$lmconfig['debug'] = false;
@@ -66,6 +86,118 @@ class Kohana_Auth_Lemonldap extends Auth
 	public function check_password ( $password )
 	{
 		return FALSE;
+	}
+
+	/**
+	 * Login user through a SOAP request to the Lemonldap::NG server
+	 *
+	 * @param   string   $username  Username to log in
+	 * @param   string   $password  Password to check against
+	 * @return  boolean
+	 */
+	public function login_with_soap ( $username, $password )
+	{
+		// Get configuration
+		$config = $this->_lmconfig;
+		$debug = $config['debug'];
+
+		// Check WSDL ressource
+		if ($config['service']['wsdl'] === false)
+		{
+			if ($debug)
+			{
+				self::_trace('NO WSDL');
+			}
+			return FALSE;
+		}
+
+		// Check HTTP header
+		if ($config['service']['sessionid_header'] === false)
+		{
+			if ($debug)
+			{
+				self::_trace('NO SESSIONID HEADER');
+			}
+			return FALSE;
+		}
+
+		// Check SSO domain
+		if ($config['service']['cookie_domain'] === false)
+		{
+			if ($debug)
+			{
+				self::_trace('NO COOKIE DOMAIN FOUND');
+			}
+			return FALSE;
+		}
+
+		// Get session id
+		$sessionid = $_SERVER[$config['service']['sessionid_header']];
+
+		// Store the success of the operation
+		$success = false;
+
+		try
+		{
+			// Configure SOAP request
+			$service_maps = array('GetCookieResponse' => 'CookiesResponse');
+			$service_opts = array('trace' => 1, 'classmap' => $service_maps);
+
+			// Instanciate the SOAP instance
+			$service = new SoapClient($config['service']['wsdl'], $service_opts);
+
+			// Authenticate the user via SOAP
+			$result = $service->getCookies($username, $password, $sessionid);
+
+			// Get the result. If there are some cookies which values are
+			// not 0, then authentication should be OK.
+			$r_error   = $result->getError();
+			$r_cookies = $result->getCookies();
+
+			// Cookie name and domain
+			$cookie_name = $config['service']['cookie_name'];
+			$cookie_domain = $config['service']['cookie_domain'];
+
+			if ($debug)
+			{
+				self::_trace('ERROR = '.var_export($r_error,true));
+				self::_trace('COOKIES = '.var_export($r_cookies,true));
+			}
+
+			// The lemonldap cookie should contains the SSO session id
+			// of the corresponding user. It must be the same as the one
+			// found into HTTP headers.
+			if (isset($r_cookies[$cookie_name]) && strlen($r_cookies[$cookie_name]) > 1 && $sessionid == $r_cookies[$cookie_name])
+			{
+				$success = true;
+			}
+			else if ($debug)
+			{
+				self::_trace('NO LEMONLDAP COOKIE FOUND ('.$sessionid.')');
+			}
+
+			// To force Handler to refresh its header, send an update cookie.
+			$success &= setcookie(
+				$cookie_name.'update',			// Name
+				time(),					// Value
+				0,					// Expire
+				'/',					// Path
+				$cookie_domain,				// Domain
+				false,					// Secure
+				false);					// HttpOnly
+		}
+
+		// If an error occurs, trace it
+		catch (SoapFault $exception)
+		{
+			if ($debug)
+			{
+				$error = $service->__getLastRequest()."\n".$service->__getLastResponse();
+				self::_trace("SOAP ERROR:\n".$error);
+			}
+		}
+
+		return $success;
 	}
 
 	/**
@@ -90,6 +222,16 @@ class Kohana_Auth_Lemonldap extends Auth
 	public function password ( $username )
 	{
 		return null;
+	}
+
+	/**
+	 * Trace
+	 *
+	 * @param   string   $message
+	 */
+	protected static function _trace ( $message )
+	{
+		file_put_contents('/tmp/lemonldap.log', $message."\n", FILE_APPEND);
 	}
 
 	/**
@@ -122,7 +264,7 @@ class Kohana_Auth_Lemonldap extends Auth
 		{
 			if ($debug)
 			{
-				file_put_contents('/tmp/lemonldap.log', 'REMOTE_ADDR='.$_SERVER['REMOTE_ADDR']."\n", FILE_APPEND);
+				self::_trace('REMOTE_ADDR='.$_SERVER['REMOTE_ADDR']);
 			}
 			if (isset($_SERVER['REMOTE_ADDR']) && $_SERVER['REMOTE_ADDR'] != $config['security']['server_ip'])
 			{
@@ -138,7 +280,7 @@ class Kohana_Auth_Lemonldap extends Auth
 
 			if ($debug)
 			{
-				file_put_contents('/tmp/lemonldap.log', 'TOKEN_NAME='.$header.', TOKEN_VALUE='.$value."\n", FILE_APPEND);
+				self::_trace('TOKEN_NAME='.$header.', TOKEN_VALUE='.$value);
 			}
 			if (isset($_SERVER[$header]) && $_SERVER[$header] != $value)
 			{
@@ -152,7 +294,7 @@ class Kohana_Auth_Lemonldap extends Auth
 		// Trace user information
 		if ($debug)
 		{
-			file_put_contents('/tmp/lemonldap.log', 'USER='.var_export($user,true)."\n", FILE_APPEND);
+			self::_trace('USER='.var_export($user,true));
 		}
 
 		// Authenticate
