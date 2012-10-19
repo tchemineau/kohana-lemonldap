@@ -47,10 +47,6 @@ return array
 		// URL to the WSDL file of Lemonldap::NG server
 		'wsdl' => 'http://auth.example.com/portal.wsdl',
 
-		// Name of the HTTP header that specify the user SSO session id.
-		// This header have to be configured into the Lemonldap::NG manager.
-		'sessionid_header' => 'HTTP_AUTH_SESSION_ID',
-
 		// Cookie domain
 		'cookie_domain' => '.example.com',
 
@@ -58,6 +54,10 @@ return array
 		'cookie_name' => 'lemonldap',
 
 	),
+
+	// Name of the HTTP header that specify the user SSO session id.
+	// This header have to be configured into the Lemonldap::NG manager.
+	'sessionid_header' => 'HTTP_SSO_SESSIONID',
 
 	// Header used to check if SSO is enabled or not.
 	// Only used by the Lemonldap_Auth::is_sso() function.
