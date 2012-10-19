@@ -112,7 +112,7 @@ class Kohana_Auth_Lemonldap extends Auth
 		}
 
 		// Check HTTP header
-		if ($config['service']['sessionid_header'] === false)
+		if ($config['service']['sessionid_header'] === false || !isset($_SERVER[$config['service']['sessionid_header']]))
 		{
 			if ($debug)
 			{
