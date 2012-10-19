@@ -56,10 +56,6 @@ class Kohana_Auth_Lemonldap extends Auth
 		{
 			$lmconfig['service']['wsdl'] = false;
 		}
-		if (!isset($lmconfig['service']['sessionid_header']))
-		{
-			$lmconfig['service']['sessionid_header'] = false;
-		}
 		if (!isset($lmconfig['service']['cookie_domain']))
 		{
 			$lmconfig['service']['cookie_domain'] = false;
@@ -68,6 +64,10 @@ class Kohana_Auth_Lemonldap extends Auth
 		{
 			$lmconfig['service']['cookie_name'] = 'lemonldap';
 		}
+                if (!isset($lmconfig['sessionid_header']))
+                {
+                        $lmconfig['sessionid_header'] = false;
+                }
 		if (!isset($lmconfig['sso_header']))
 		{
 			$lmconfig['sso_header'] = false;
@@ -107,6 +107,23 @@ class Kohana_Auth_Lemonldap extends Auth
 	}
 
 	/**
+	 * Checkf if SSO session changed.
+	 *
+	 * @return boolean
+	 */
+	public function is_sso_expired ()
+	{
+		$sessionid = $this->_session->get('sso_sessionid', false);
+
+		if ($sessionid !== false && $config['sessionid_header'] !== false && isset($_SERVER[$config['sessionid_header']]))
+		{
+			return $sessionid != $_SERVER[$config['sessionid_header']];
+		}
+
+		return false;
+	}
+
+	/**
 	 * Login user through a SOAP request to the Lemonldap::NG server
 	 *
 	 * @param   string   $username  Username to log in
@@ -129,16 +146,6 @@ class Kohana_Auth_Lemonldap extends Auth
 			return FALSE;
 		}
 
-		// Check HTTP header
-		if ($config['service']['sessionid_header'] === false || !isset($_SERVER[$config['service']['sessionid_header']]))
-		{
-			if ($debug)
-			{
-				self::_trace('NO SESSIONID HEADER');
-			}
-			return FALSE;
-		}
-
 		// Check SSO domain
 		if ($config['service']['cookie_domain'] === false)
 		{
@@ -149,8 +156,18 @@ class Kohana_Auth_Lemonldap extends Auth
 			return FALSE;
 		}
 
+                // Check HTTP header
+                if ($config['sessionid_header'] === false || !isset($_SERVER[$config['sessionid_header']]))
+                {
+                        if ($debug)
+                        {
+                                self::_trace('NO SESSIONID HEADER');
+                        }
+                        return FALSE;
+                }
+
 		// Get session id
-		$sessionid = $_SERVER[$config['service']['sessionid_header']];
+		$sessionid = $_SERVER[$config['sessionid_header']];
 
 		// Store the success of the operation
 		$success = false;
@@ -196,13 +213,13 @@ class Kohana_Auth_Lemonldap extends Auth
 
 			// To force Handler to refresh its header, send an update cookie.
 			$success &= setcookie(
-				$cookie_name.'update',			// Name
-				time(),					// Value
-				0,					// Expire
-				'/',					// Path
-				$cookie_domain,				// Domain
-				false,					// Secure
-				false);					// HttpOnly
+				$cookie_name.'update',	// Name
+				time(),			// Value
+				0,			// Expire
+				'/',			// Path
+				$cookie_domain,		// Domain
+				false,			// Secure
+				false);			// HttpOnly
 		}
 
 		// If an error occurs, trace it
@@ -318,6 +335,10 @@ class Kohana_Auth_Lemonldap extends Auth
 		// Authenticate
 		if ($user !== false)
 		{
+			if (isset($_SERVER[$config['sessionid_header']]))
+			{
+				$this->_session->set('sso_sessionid', $_SERVER[$config['sessionid_header']]);
+			}
 			return $this->complete_login($user->data());
 		}
 
