@@ -97,13 +97,13 @@ class Kohana_Auth_Lemonldap extends Auth
 	 *
 	 * @return boolean
 	 */
-	public static function is_sso ()
+	public function is_sso ()
 	{
 		// Get configuration
 		$config = $this->_lmconfig;
 		$debug = $config['debug'];
 
-		return $config['sso_header'] !== false && isset($_SERVER[$config['sso_header']);
+		return $config['sso_header'] !== false && isset($_SERVER[$config['sso_header']]);
 	}
 
 	/**
