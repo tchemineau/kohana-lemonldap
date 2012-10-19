@@ -68,6 +68,10 @@ class Kohana_Auth_Lemonldap extends Auth
 		{
 			$lmconfig['service']['cookie_name'] = 'lemonldap';
 		}
+		if (!isset($lmconfig['sso_header']))
+		{
+			$lmconfig['sso_header'] = false;
+		}
 		if (!isset($lmconfig['debug']))
 		{
 			$lmconfig['debug'] = false;
@@ -86,6 +90,20 @@ class Kohana_Auth_Lemonldap extends Auth
 	public function check_password ( $password )
 	{
 		return FALSE;
+	}
+
+	/**
+	 * Check if SSO is activated by verifying the SSO header.
+	 *
+	 * @return boolean
+	 */
+	public static function is_sso ()
+	{
+		// Get configuration
+		$config = $this->_lmconfig;
+		$debug = $config['debug'];
+
+		return $config['sso_header'] !== false && isset($_SERVER[$config['sso_header']);
 	}
 
 	/**

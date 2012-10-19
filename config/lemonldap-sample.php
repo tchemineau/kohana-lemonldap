@@ -59,5 +59,9 @@ return array
 
 	),
 
+	// Header used to check if SSO is enabled or not.
+	// Only used by the Lemonldap_Auth::is_sso() function.
+	'sso_header' => 'HTTP_SSO',
+
 );
 
