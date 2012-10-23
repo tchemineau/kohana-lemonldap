@@ -101,18 +101,21 @@ class Kohana_Auth_Lemonldap extends Auth
 	{
 		// Get configuration
 		$config = $this->_lmconfig;
-		$debug = $config['debug'];
 
 		return $config['sso_header'] !== false && isset($_SERVER[$config['sso_header']]);
 	}
 
 	/**
-	 * Checkf if SSO session changed.
+	 * Check if SSO session changed.
 	 *
 	 * @return boolean
 	 */
 	public function is_sso_expired ()
 	{
+		// Get configuration
+		$config = $this->_lmconfig;
+
+		// Get session ID
 		$sessionid = $this->_session->get('sso_sessionid', false);
 
 		if ($sessionid !== false && $config['sessionid_header'] !== false && isset($_SERVER[$config['sessionid_header']]))
