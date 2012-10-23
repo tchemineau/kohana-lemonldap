@@ -32,6 +32,19 @@ class Kohana_Auth_Lemonldap extends Auth
 
 		$lmconfig = Kohana::$config->load('lemonldap');
 
+		// Debug
+		if (!isset($lmconfig['debug']))
+		{
+			$lmconfig['debug'] = false;
+		}
+
+		// Logout URL
+		if (!isset($mlconfig['logout_url']))
+		{
+			$lmconfig['logout_url'] = '/logout/';
+		}
+
+		// Security
 		if (!isset($lmconfig['security']))
 		{
 			$lmconfig['security'] = array();
@@ -48,6 +61,8 @@ class Kohana_Auth_Lemonldap extends Auth
 		{
 			$lmconfig['security']['token_value'] = false;
 		}
+
+		// Service
 		if (!isset($lmconfig['service']))
 		{
 			$lmconfig['service'] = array();
@@ -64,17 +79,15 @@ class Kohana_Auth_Lemonldap extends Auth
 		{
 			$lmconfig['service']['cookie_name'] = 'lemonldap';
 		}
-                if (!isset($lmconfig['sessionid_header']))
-                {
-                        $lmconfig['sessionid_header'] = false;
-                }
+
+		// Header
+		if (!isset($lmconfig['sessionid_header']))
+		{
+			$lmconfig['sessionid_header'] = false;
+		}
 		if (!isset($lmconfig['sso_header']))
 		{
 			$lmconfig['sso_header'] = false;
-		}
-		if (!isset($lmconfig['debug']))
-		{
-			$lmconfig['debug'] = false;
 		}
 
 		$this->_lmconfig = $lmconfig;
@@ -156,15 +169,15 @@ class Kohana_Auth_Lemonldap extends Auth
 			return FALSE;
 		}
 
-                // Check HTTP header
-                if ($config['sessionid_header'] === false || !isset($_SERVER[$config['sessionid_header']]))
-                {
-                        if ($debug)
-                        {
-                                self::_trace('NO SESSIONID HEADER');
-                        }
-                        return FALSE;
-                }
+		// Check HTTP header
+		if ($config['sessionid_header'] === false || !isset($_SERVER[$config['sessionid_header']]))
+		{
+			if ($debug)
+			{
+				self::_trace('NO SESSIONID HEADER');
+			}
+			return FALSE;
+		}
 
 		// Get session id
 		$sessionid = $_SERVER[$config['sessionid_header']];
@@ -236,15 +249,36 @@ class Kohana_Auth_Lemonldap extends Auth
 	}
 
 	/**
-	 * Check to see if the user is logged in, and if $role is set,
-	 * has all roles.
+	 * Log out a user by removing the related session variables.
+	 * Override Auth::logout method
 	 *
-	 * @param   mixed   $role
-	 * @return  boolean
+	 * @param   boolean  $destroy     Completely destroy the session
+	 * @param   boolean  $logout_all  Remove all tokens for user
+	 * @return  string|false
 	 */
-	public function logged_in ( $role = NULL )
+	public function logout ( $destroy = FALSE, $logout_all = FALSE )
 	{
-		return false;
+		// Get configuration
+		$config = $this->_lmconfig;
+
+		// Process to logout
+		$logout = parent::logout($destroy, $logout_all);
+
+		// If logout successful, proceed to SSO redirection
+		if ($logout)
+		{
+			$req = Request::current();
+			$url = $config['logout_url'];
+
+			if (substr($url, 0, 4) != 'http')
+			{
+				$url = URL::site('', $req).$url;
+			}
+
+			$logout = $url;
+		}
+
+		return $logout;
 	}
 
 	/**

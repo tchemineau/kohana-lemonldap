@@ -6,6 +6,9 @@ return array
 	// Activate debug
 	'debug' => false,
 
+	// Logout URL
+	'logout_url' => '/logout/',
+
 	// Here, define mapping between internal variables and HTTP headers. Add your own
 	// internal variables which will be stored in session and could be retrieve by
 	// calling $auth->get_user()
